@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ request }) => {
   } catch (error) {
     if (error instanceof InvalidChoiceError) {
       return new Response(
-        JSON.stringify({ error: "Please choose one of the four project directions." }),
+        JSON.stringify({ error: "Please choose one of the four teams." }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }

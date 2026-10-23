@@ -1,5 +1,5 @@
 ---
-import { CHOICES } from "../config/choices";
+import { CHOICES } from "../config/soccer-choices";
 import { activityTheme } from "../config/activity-theme";
 
 const choicesJson = JSON.stringify(CHOICES);
@@ -12,7 +12,7 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>What will you build next?</title>
+    <title>Who will win the NWSL playoffs?</title>
     <!-- WF Visual Sans is Webflow's custom brand typeface (licensed, download-only).
          Poppins/Inter are the brand guide's own sanctioned Google Font fallback,
          so we use those instead of shipping custom font files. -->
@@ -26,15 +26,15 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
   <body data-reveal-effect={activityTheme.revealEffect} style={`--activity-accent: ${activityTheme.accentColor}`}>
     <main class="wrap">
       <header class="intro">
-        <h1>What will you build next?</h1>
-        <p>Pick a project direction and meet your build artifact.</p>
+        <h1>Who will win the NWSL playoffs?</h1>
+        <p>Pick the team you think will win.</p>
       </header>
 
       <p id="loading-message" class="status-line" hidden>Loading your previous result…</p>
 
       <form id="choice-form" class="choice-form">
         <fieldset>
-          <legend>Choose a project direction</legend>
+          <legend>Choose a team</legend>
           <div class="choice-grid">
             {
               CHOICES.map((choice) => (
@@ -47,7 +47,7 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
             }
           </div>
         </fieldset>
-        <button type="submit" id="submit-btn">Reveal my build artifact</button>
+        <button type="submit" id="submit-btn">Reveal my team</button>
       </form>
 
       <div id="status" role="status" aria-live="polite" class="visually-hidden"></div>
@@ -64,9 +64,9 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
           </span>
           <div class="reveal-copy">
             <p class="reveal-eyebrow">You picked: <span id="reveal-choice-label"></span></p>
-            <h2>Meet your build artifact: <span id="reveal-artifact-name"></span></h2>
+            <h2>Meet your team: <span id="reveal-artifact-name"></span></h2>
             <p id="reveal-description"></p>
-            <p class="reveal-example"><strong>What you could build:</strong> <span id="reveal-example"></span></p>
+            <p class="reveal-example"><strong>Fun facts:</strong> <span id="reveal-example"></span></p>
             <a id="reveal-resource-link" class="resource-link" href="#" target="_blank" rel="noopener noreferrer">
               <span id="reveal-resource-label"></span>
               <span aria-hidden="true">↗</span>
@@ -77,9 +77,9 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
 
         <div class="results-panel">
           <h3>How everyone has answered so far</h3>
-          <p id="sample-note" class="sample-note"></p>
+          <p id="results-total" class="results-total"></p>
           <ul id="results-list" class="results-list"></ul>
-          <button type="button" id="start-over-btn" class="start-over">Choose a different direction</button>
+          <button type="button" id="start-over-btn" class="start-over">Choose a different team</button>
         </div>
       </section>
     </main>
@@ -137,8 +137,8 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
       const revealExample = document.getElementById("reveal-example") as HTMLElement;
       const revealResourceLink = document.getElementById("reveal-resource-link") as HTMLAnchorElement;
       const revealResourceLabel = document.getElementById("reveal-resource-label") as HTMLElement;
-      const sampleNote = document.getElementById("sample-note") as HTMLElement;
       const resultsList = document.getElementById("results-list") as HTMLElement;
+      const resultsTotal = document.getElementById("results-total") as HTMLElement;
       const startOverBtn = document.getElementById("start-over-btn") as HTMLButtonElement;
 
       let lastAction: (() => void) | null = null;
@@ -197,7 +197,7 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
       }
 
       function renderResults(payload: ResultsPayload, selectedChoiceId: ChoiceId | null) {
-        sampleNote.textContent = `Results started with ${payload.sampleBaselineCount} sample responses and update as people respond.`;
+        resultsTotal.textContent = `Total votes: ${payload.totalCount}`;
         resultsList.innerHTML = "";
         for (const choice of CHOICES) {
           const count = payload.totals[choice.id] ?? 0;
@@ -221,6 +221,7 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
         revealArt.src = withBase(choice.artworkSrc);
         revealArt.alt = choice.artworkAlt;
         revealCard.style.setProperty("--choice-accent", choice.accentColor);
+        startOverBtn.style.setProperty("--choice-accent", choice.accentColor);
         revealChoiceLabel.textContent = choice.label;
         revealArtifactName.textContent = choice.artifactName;
         revealDescription.textContent = choice.description;
@@ -248,6 +249,22 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
         if (!res.ok) throw new Error("submit-failed");
         return res.json();
       }
+
+      // Color the submit button to match the team currently selected.
+      function updateSubmitAccent() {
+        const selected = form.querySelector<HTMLInputElement>('input[name="choice"]:checked');
+        const choice = selected ? choicesById.get(selected.value as ChoiceId) : undefined;
+        if (choice) {
+          submitBtn.style.setProperty("--choice-accent", choice.accentColor);
+          submitBtn.dataset.team = choice.id;
+        } else {
+          submitBtn.style.removeProperty("--choice-accent");
+          delete submitBtn.dataset.team;
+        }
+      }
+
+      form.addEventListener("change", updateSubmitAccent);
+      updateSubmitAccent();
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -288,6 +305,7 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
         // or the choices stay greyed out until a full page reload.
         submitBtn.disabled = false;
         form.querySelectorAll("input").forEach((input) => (input.disabled = false));
+        updateSubmitAccent();
         setStatus("");
       });
 
@@ -459,6 +477,28 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
         outline-offset: 2px;
       }
 
+      /* Match the picked team. Dark text because every team accent is light. */
+      .start-over {
+        background: var(--choice-accent, var(--activity-accent));
+        color: #171717;
+      }
+
+      /* White until a team is picked, then the team's color. */
+      #submit-btn {
+        background: #ffffff;
+        color: #000000;
+      }
+
+      #submit-btn[data-team] {
+        background: var(--choice-accent);
+        color: #171717;
+      }
+
+      .start-over:focus-visible,
+      #submit-btn[data-team]:focus-visible {
+        outline-color: var(--choice-accent, var(--activity-accent));
+      }
+
       .error-banner {
         background: #2a1215;
         border: 1px solid #ee1d36;
@@ -602,7 +642,7 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
         padding: 1.5rem;
       }
 
-      .sample-note {
+      .results-total {
         color: #ababab;
         margin-top: 0;
       }

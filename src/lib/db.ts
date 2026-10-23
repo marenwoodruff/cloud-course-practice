@@ -1,8 +1,9 @@
-import { CHOICE_IDS, type ChoiceId } from "../config/choices";
+import { CHOICE_IDS, type ChoiceId } from "../config/soccer-choices";
 
-// Must match the number of rows inserted by migrations/0001_init.sql.
+// Must match the number of sample rows inserted by migrations/0001_init.sql
+// and migrations/0003_more_sample_responses.sql.
 // Shown to participants so the starting point is never mistaken for real data.
-export const SAMPLE_BASELINE_COUNT = 24;
+export const SAMPLE_BASELINE_COUNT = 48;
 
 export interface ResultsPayload {
   totals: Record<ChoiceId, number>;
